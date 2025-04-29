@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片水印生成器</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-area:hover {
+            border-color: #2196F3;
+            background-color: #f0f8ff;
+        }
+        .upload-area p {
+            margin: 10px 0 0;
+            color: #666;
+        }
+        #upload-icon {
+            font-size: 48px;
+            color: #999;
+        }
+        .options {
+            margin-bottom: 20px;
+        }
+        .options label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .options input, .options select {
+            margin-bottom: 15px;
+            padding: 8px;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        button:hover {
+            background-color: #0b7dda;
+        }
+        #preview-container {
+            display: none;
+            position: relative;
+            margin-top: 30px;
+            border: 1px solid #ddd;
+            overflow: hidden;
+        }
+        #preview-image {
+            max-width: 100%;
+            display: block;
+        }
+        .watermark {
+            position: absolute;
+            color: white;
+            font-size: 14px;
+            line-height: 1.5;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            user-select: none;
+            pointer-events: none;
+        }
+        .watermark-left {
+            left: 10px;
+            bottom: 10px;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.3);
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+        .watermark-right {
+            right: 10px;
+            bottom: 10px;
+            text-align: right;
+            background-color: rgba(0, 0, 0, 0.3);
+            padding: 5px;
+            border-radius: 4px;
+        }
+        .watermark-top {
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            color: black;
+            padding: 5px 0;
+            border-bottom-right-radius: 10px;
+        }
+        .watermark-center {
+            position: absolute;
+            top: 50px;
+            left: 0;
+            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border-top-right-radius: 5px;
+            border-bottom-right-radius: 5px;
+        }
+        .center-content {
+            display: flex;
+        }
+        .yellow-bar {
+            width: 4px;
+            background-color: #ffd600;
+            margin-right: 10px;
+        }
+        .shield-icon {
+            margin-right: 8px;
+            width: 16px;
+            height: 16px;
+        }
+        .badge {
+            display: inline-block;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 2px 4px;
+            font-size: 12px;
+            border-radius: 2px;
+            margin-top: 3px;
+        }
+        .download-btn {
+            background-color: #4CAF50;
+        }
+        .download-btn:hover {
+            background-color: #45a049;
+        }
+        .anti-fake {
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .time-display {
+            display: flex;
+            align-items: center;
+        }
+        .punch-in {
+            background-color: #FFCC00;
+            color: black;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-right: 8px;
+            font-weight: bold;
+        }
+        .clock-time {
+            color: #0066CC;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>图片水印生成器</h1>
+        
+        <div class="upload-area" id="upload-area">
+            <div id="upload-icon">📤</div>
+            <h3>点击或拖拽图片到此处上传</h3>
+            <p>支持 JPG、PNG 格式</p>
+            <input type="file" id="file-input" accept="image/*" style="display: none;">
+        </div>
+        
+        <div class="options">
+            <h3>水印设置</h3>
+            
+            <label for="location-input">地点信息:</label>
+            <input type="text" id="location-input" placeholder="例如：陕西省西安市雁塔区 三五零七社区" value="陕西省西安市雁塔区 三五零七社区">
+
+            <label for="date-input">日期:</label>
+            <input type="text" id="date-input" placeholder="例如：2025.04.29 星期二" value="2025.04.29 星期二">
+
+            <label for="time-input">时间:</label>
+            <input type="text" id="time-input" placeholder="例如：11:03" value="11:03">
+
+            <label for="fake-code">防伪码:</label>
+            <input type="text" id="fake-code" placeholder="防伪码" value="XT3K2YK326NUY4">
+
+            <label for="watermark-opacity">水印透明度:</label>
+            <input type="range" id="watermark-opacity" min="0.1" max="1" step="0.1" value="0.8">
+        </div>
+        
+        <button id="apply-btn">应用水印</button>
+        
+        <div id="preview-container">
+            <img id="preview-image" src="" alt="预览图">
+            
+            <!-- 顶部信息栏水印 -->
+            <!-- 顶部信息栏水印（已移至左下角，保留空占位） -->
+            
+            <!-- 中间信息水印 -->
+            <!-- 中间信息水印（已移至左下角，保留空占位） -->
+            
+            <!-- 左下角水印 -->
+            <div class="watermark watermark-left" style="flex-direction: column; align-items: flex-start;">
+                <div class="time-display" style="margin-bottom:2px;">
+                    <div id="punch-time-bg" style="display:flex;align-items:center;background:#fff;border-radius:4px;padding:2px 16px 2px 5px;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
+                        <div class="punch-in" style="font-size:24px;color:black;background:#efc649;padding:2px 10px;margin-right:8px;font-weight:bold;border-radius:4px;">打卡</div>
+                        <div class="clock-time" id="time-display" style="font-size:24px;color:#0066CC;background:none;padding:0;margin:0;font-weight:bold;">11:03</div>
+                    </div>
+                </div>
+                <div id="location-display" style="margin-bottom:2px;">陕西省西安市雁塔区丈八街道陕西省青少年体育运动学校</div>
+                <div id="date-display" style="margin-bottom:2px;">2025.04.29 星期二</div>
+                <div style="display:flex;align-items:center;">
+                    <svg class="shield-icon" viewBox="0 0 24 24" fill="white">
+                        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+                    </svg>
+                    <div>今日水印相机已验证｜时间地点真实</div>
+                </div>
+            </div>
+            
+            <!-- 右下角水印 -->
+            <div class="watermark watermark-right" style="display:flex;flex-direction:column;align-items:flex-end;">
+                <div style="font-size:22px;font-weight:bold;line-height:1.2;margin-bottom:4px;">今日水印</div>
+                <div style="background:rgba(200,200,200,0.7);color:#222;font-size:15px;padding:2px 10px;border-radius:4px;margin-bottom:4px;">相机 真实可验</div>
+                <div class="anti-fake" style="font-size:12px;">防伪 <span id="fake-code-display">XT3K2YK326NUY4</span></div>
+            </div>
+        </div>
+        
+        <button id="download-btn" class="download-btn" style="display: none;">下载带水印图片</button>
+    </div>
+
+    <script>
+        // 获取DOM元素
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const previewContainer = document.getElementById('preview-container');
+        const previewImage = document.getElementById('preview-image');
+        const applyBtn = document.getElementById('apply-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const locationInput = document.getElementById('location-input');
+        const fakeCodeInput = document.getElementById('fake-code');
+        const opacityInput = document.getElementById('watermark-opacity');
+        
+        // 显示日期
+        const dateDisplay = document.getElementById('date-display');
+        const timeDisplay = document.getElementById('time-display');
+        const locationDisplay = document.getElementById('location-display');
+        const fakeCodeDisplay = document.getElementById('fake-code-display');
+        const dateInput = document.getElementById('date-input');
+        const timeInput = document.getElementById('time-input');
+
+        // 初始化输入框同步
+        dateInput.addEventListener('input', () => {
+            dateDisplay.textContent = dateInput.value;
+        });
+        timeInput.addEventListener('input', () => {
+            timeDisplay.textContent = timeInput.value;
+        });
+        locationInput.addEventListener('input', () => {
+            locationDisplay.textContent = locationInput.value;
+        });
+
+        // 初始化默认值
+        dateDisplay.textContent = dateInput.value;
+        timeDisplay.textContent = timeInput.value;
+        locationDisplay.textContent = locationInput.value;
+
+        // 保留自动时间更新函数（如需自动更新时间可启用）
+        /*
+        function updateDateTime() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+            const weekday = weekdays[now.getDay()];
+            dateDisplay.textContent = `${year}.${month}.${day} 星期${weekday}`;
+            timeDisplay.textContent = `${hours}:${minutes}`;
+        }
+        */
+        
+        // 上传区域点击事件
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        // 拖拽上传
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#2196F3';
+            uploadArea.style.backgroundColor = '#f0f8ff';
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '#ddd';
+            uploadArea.style.backgroundColor = '';
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#ddd';
+            uploadArea.style.backgroundColor = '';
+            
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect();
+            }
+        });
+        
+        // 文件选择事件
+        fileInput.addEventListener('change', handleFileSelect);
+        
+        function handleFileSelect() {
+            const file = fileInput.files[0];
+            
+            if (file && file.type.match('image.*')) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    previewContainer.style.display = 'block';
+                    downloadBtn.style.display = 'block';
+                    updateWatermarkInfo();
+                };
+                
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        // 应用水印按钮事件
+        applyBtn.addEventListener('click', () => {
+            updateWatermarkInfo();
+        });
+        
+        // 下载按钮事件
+        downloadBtn.addEventListener('click', downloadImage);
+        
+        // 更新水印信息
+        function updateWatermarkInfo() {
+            // 直接用输入框内容
+            dateDisplay.textContent = dateInput.value;
+            timeDisplay.textContent = timeInput.value;
+            locationDisplay.textContent = locationInput.value || '陕西省西安市雁塔区 三五零七社区';
+            fakeCodeDisplay.textContent = fakeCodeInput.value || 'XT3K2YK326NUY4';
+
+            // 更新水印透明度
+            const opacity = opacityInput.value;
+            const watermarks = document.querySelectorAll('.watermark');
+            watermarks.forEach(watermark => {
+                if (watermark.classList.contains('watermark-top')) {
+                    watermark.style.opacity = 1;
+                } else if (watermark.classList.contains('watermark-center')) {
+                    watermark.style.opacity = 1;
+                } else {
+                    watermark.style.opacity = opacity;
+                }
+            });
+        }
+        
+        // 下载带水印的图片
+        function downloadImage() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 等待图片加载完成
+            const img = new Image();
+            img.crossOrigin = 'Anonymous';
+            img.onload = function() {
+                // 设置canvas尺寸与图片相同
+                canvas.width = img.width;
+                canvas.height = img.height;
+                
+                // 绘制原始图片
+                ctx.drawImage(img, 0, 0);
+                
+                // 创建一个临时的div来复制HTML水印
+                const tempContainer = document.createElement('div');
+                tempContainer.style.position = 'relative';
+                tempContainer.style.width = img.width + 'px';
+                tempContainer.style.height = img.height + 'px';
+                
+                // 复制所有水印
+                const watermarks = document.querySelectorAll('.watermark');
+                watermarks.forEach(watermark => {
+                    const clone = watermark.cloneNode(true);
+                    tempContainer.appendChild(clone);
+                });
+                
+                // 将所有水印转换为canvas中的图像
+                // 注意：这种方法有局限性，不能完全复制CSS样式
+                // 对于生产环境，建议使用html2canvas等库
+                
+                // 简单实现：直接在Canvas上绘制文本
+                
+                // 顶部打卡信息
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, img.width, 40);
+                
+                ctx.fillStyle = '#FFCC00';
+                ctx.fillRect(20, 8, 40, 24);
+                ctx.fillStyle = 'black';
+                ctx.font = 'bold 16px sans-serif';
+                ctx.fillText('打卡', 25, 26);
+                
+                ctx.fillStyle = '#0066CC';
+                ctx.font = 'bold 18px sans-serif';
+                ctx.fillText(timeDisplay.textContent, 70, 26);
+                
+                // 中间信息
+                const centerY = 60;
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.fillRect(0, centerY, img.width * 0.8, 70);
+                
+                // 黄色竖条
+                ctx.fillStyle = '#ffd600';
+                ctx.fillRect(10, centerY, 4, 70);
+                
+                // 地点和日期
+                ctx.fillStyle = 'white';
+                ctx.font = '16px sans-serif';
+                ctx.fillText(locationDisplay.textContent, 20, centerY + 25);
+                ctx.fillText(dateDisplay.textContent, 20, centerY + 50);
+                
+                // 左下角水印
+                const leftWatermarkY = img.height - 30;
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.fillRect(10, leftWatermarkY - 10, 240, 30);
+                
+                ctx.fillStyle = 'white';
+                ctx.font = '14px sans-serif';
+                ctx.fillText('今日水印相机已验证｜时间地点真实', 30, leftWatermarkY + 5);
+                
+                // 右下角水印
+                const rightWatermarkY = img.height - 60;
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.fillRect(img.width - 110, rightWatermarkY, 100, 50);
+                
+                ctx.fillStyle = 'white';
+                ctx.font = '14px sans-serif';
+                ctx.fillText('今日水印相机', img.width - 90, rightWatermarkY + 15);
+                
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.fillRect(img.width - 80, rightWatermarkY + 20, 40, 18);
+                ctx.fillStyle = 'black';
+                ctx.font = '12px sans-serif';
+                ctx.fillText('真实验', img.width - 75, rightWatermarkY + 33);
+                
+                ctx.fillStyle = 'white';
+                ctx.font = '12px sans-serif';
+                ctx.fillText('防伪 ' + fakeCodeDisplay.textContent, img.width - 108, rightWatermarkY + 45);
+                
+                // 创建下载链接
+                const link = document.createElement('a');
+                link.download = '带水印的图片.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            };
+            
+            img.src = previewImage.src;
+        }
+        
+        // 初始化
+        updateDateTime();
+        
+        // 每分钟更新一次时间
+        setInterval(updateDateTime, 60000);
+    </script>
+</body>
+</html>
