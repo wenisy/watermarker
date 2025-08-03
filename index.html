@@ -151,6 +151,13 @@
             font-size: 12px;
             margin-top: 5px;
         }
+        .high-temp {
+            background-color: #FF5722 !important;
+            color: white !important;
+            padding: 2px 8px !important;
+            border-radius: 4px !important;
+            font-weight: bold !important;
+        }
     </style>
 </head>
 <body>
@@ -168,7 +175,7 @@
             <h3>水印设置</h3>
             
             <label for="location-input">地点信息:</label>
-            <input type="text" id="location-input" placeholder="例如：西安市雁塔区 · 三五零七社区" value="西安市雁塔区 · 三五零七社区">
+            <input type="text" id="location-input" placeholder="例如：西安市雁塔区 · 恒大城" value="西安市雁塔区 · 恒大城">
 
             <label for="date-input">日期:</label>
             <input type="text" id="date-input" placeholder="例如：2025-05-12" value="">
@@ -177,13 +184,16 @@
             <input type="text" id="weekday-input" placeholder="例如：星期一" value="">
 
             <label for="weather-input">天气:</label>
-            <input type="text" id="weather-input" placeholder="例如：阴 27°C" value="阴 27°C">
+            <input type="text" id="weather-input" placeholder="例如：阴 27°C" value="晴 36°C">
 
             <label for="time-input">时间:</label>
             <input type="text" id="time-input" placeholder="例如：11:05" value="11:05">
 
             <label for="fake-code">防伪码:</label>
-            <input type="text" id="fake-code" placeholder="防伪码" value="">
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="fake-code" placeholder="防伪码" value="" style="flex: 1;">
+                <button type="button" id="refresh-code-btn" style="width: auto; padding: 8px 15px; margin-bottom: 0; background-color: #FF9800;">刷新</button>
+            </div>
 
             <label for="watermark-opacity">水印透明度:</label>
             <input type="range" id="watermark-opacity" min="0.1" max="1" step="0.1" value="0.9">
@@ -207,7 +217,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="location-info" id="location-display">西安市雁塔区 · 三五零七社区</div>
+                <div class="location-info" id="location-display">西安市雁塔区 · 恒大城</div>
             </div>
             
             <!-- 右下角水印 -->
@@ -233,6 +243,7 @@
         const locationInput = document.getElementById('location-input');
         const fakeCodeInput = document.getElementById('fake-code');
         const opacityInput = document.getElementById('watermark-opacity');
+        const refreshCodeBtn = document.getElementById('refresh-code-btn');
         
         // 显示元素
         const dateDisplay = document.getElementById('date-display');
@@ -254,7 +265,7 @@
             weekdayDisplay.textContent = weekdayInput.value;
         });
         weatherInput.addEventListener('input', () => {
-            weatherDisplay.textContent = weatherInput.value;
+            updateWeatherDisplay();
         });
         timeInput.addEventListener('input', () => {
             timeDisplay.textContent = timeInput.value;
@@ -266,10 +277,46 @@
             fakeCodeDisplay.textContent = fakeCodeInput.value;
         });
 
+        // 刷新防伪码按钮事件
+        refreshCodeBtn.addEventListener('click', () => {
+            generateNewFakeCode();
+        });
+
+        // 生成新的防伪码
+        function generateNewFakeCode() {
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let fakeCode = '';
+            for (let i = 0; i < 14; i++) {
+                fakeCode += characters.charAt(Math.floor(Math.random() * characters.length));
+            }
+            fakeCodeInput.value = fakeCode;
+            fakeCodeDisplay.textContent = fakeCode;
+        }
+
+        // 更新天气显示（检查高温）
+        function updateWeatherDisplay() {
+            const weatherText = weatherInput.value;
+
+            // 检查是否包含温度并且大于等于35度
+            const tempMatch = weatherText.match(/(\d+)°C/);
+            if (tempMatch) {
+                const temperature = parseInt(tempMatch[1]);
+                if (temperature >= 35) {
+                    // 如果温度>=35度，只对"高温 XX°C"部分应用红色样式
+                    const weatherPart = weatherText.replace(/\d+°C/, '').trim();
+                    weatherDisplay.innerHTML = `${weatherPart} <span class="high-temp">高温 ${temperature}°C</span>`;
+                } else {
+                    weatherDisplay.textContent = weatherText;
+                }
+            } else {
+                weatherDisplay.textContent = weatherText;
+            }
+        }
+
         // 初始化默认值
         timeDisplay.textContent = timeInput.value;
         locationDisplay.textContent = locationInput.value;
-        weatherDisplay.textContent = weatherInput.value;
+        updateWeatherDisplay();
         
         // 上传区域点击事件
         uploadArea.addEventListener('click', () => {
@@ -332,9 +379,9 @@
             // 直接用输入框内容
             dateDisplay.textContent = dateInput.value;
             weekdayDisplay.textContent = weekdayInput.value;
-            weatherDisplay.textContent = weatherInput.value;
+            updateWeatherDisplay(); // 使用新的天气更新函数
             timeDisplay.textContent = timeInput.value;
-            locationDisplay.textContent = locationInput.value || '西安市雁塔区 · 三五零七社区';
+            locationDisplay.textContent = locationInput.value || '西安市雁塔区 · 恒大城';
             fakeCodeDisplay.textContent = fakeCodeInput.value || 'XT3K2YK326NUY4';
 
             // 更新水印透明度
@@ -392,19 +439,13 @@
             
             dateInput.value = `${year}-${month}-${day}`;
             weekdayInput.value = weekday;
-            
+
             // 生成随机防伪码
-            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let fakeCode = '';
-            for (let i = 0; i < 14; i++) {
-                fakeCode += characters.charAt(Math.floor(Math.random() * characters.length));
-            }
-            fakeCodeInput.value = fakeCode;
-            
+            generateNewFakeCode();
+
             // 更新显示
             document.getElementById('date-display').textContent = dateInput.value;
             document.getElementById('weekday-display').textContent = weekdayInput.value;
-            document.getElementById('fake-code-display').textContent = fakeCode;
         });
     </script>
     </body>
